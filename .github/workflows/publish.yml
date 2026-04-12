@@ -35,10 +35,10 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Build
+      - name: Build (x64 only)
         run: |
           cd packages/opencode
-          bun run script/build.ts --skip-install
+          bun run script/build.ts --single --skip-install
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -74,7 +74,5 @@ jobs:
           draft: false
           files: |
             packages/opencode/dist/opencode-linux-x64.tar.gz
-            packages/opencode/dist/opencode-linux-arm64.tar.gz
-            packages/opencode/dist/opencode-linux-x64-baseline.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
