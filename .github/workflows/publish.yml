@@ -8,7 +8,7 @@ on:
     inputs:
       version:
         description: "Version (e.g. 1.0.0)"
-        required: false
+        required: true
         type: string
 
 permissions:
@@ -50,7 +50,6 @@ jobs:
   release:
     needs: build-cli
     runs-on: ubuntu-latest
-    if: inputs.version
     steps:
       - uses: actions/checkout@v4
 
