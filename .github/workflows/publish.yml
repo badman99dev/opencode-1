@@ -22,10 +22,12 @@ jobs:
         with:
           fetch-tags: true
 
-      - name: Install Bun
+      - name: Install specific Bun version
         run: |
-          curl -fsSL https://bun.sh/install | bash
-          echo "$HOME/.bun/bin" >> $GITHUB_PATH
+          curl -fsSL https://github.com/oven-sh/bun/releases/download/bun-v1.3.11/bun-linux-x64.zip -o /tmp/bun.zip
+          unzip /tmp/bun.zip -d /tmp
+          mv /tmp/bun-linux-x64/bun /usr/local/bin/bun
+          chmod +x /usr/local/bin/bun
 
       - name: Check bun version
         run: bun --version
@@ -52,10 +54,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Bun
+      - name: Install specific Bun version
         run: |
-          curl -fsSL https://bun.sh/install | bash
-          echo "$HOME/.bun/bin" >> $GITHUB_PATH
+          curl -fsSL https://github.com/oven-sh/bun/releases/download/bun-v1.3.11/bun-linux-x64.zip -o /tmp/bun.zip
+          unzip /tmp/bun.zip -d /tmp
+          mv /tmp/bun-linux-x64/bun /usr/local/bin/bun
+          chmod +x /usr/local/bin/bun
 
       - uses: actions/download-artifact@v4
         with:
