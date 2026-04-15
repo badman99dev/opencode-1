@@ -1,0 +1,62 @@
+name: publish
+
+on:
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version (e.g. 1.0.0)"
+        required: false
+        type: string
+        default: "1.0.0"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+
+      - name: Install specific Bun version
+        run: |
+          curl -fsSL https://github.com/oven-sh/bun/releases/download/bun-v1.3.11/bun-linux-x64.zip -o /tmp/bun.zip
+          unzip /tmp/bun.zip -d /tmp
+          mv /tmp/bun-linux-x64/bun /usr/local/bin/bun
+          chmod +x /usr/local/bin/bun
+
+      - name: Check bun version
+        run: bun --version
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build (x64 only)
+        run: |
+          cd packages/opencode
+          bun run script/build.ts --single --skip-install
+
+      - name: List build output
+        run: ls -la packages/opencode/dist/
+
+      - name: Create tarball
+        run: |
+          cd packages/opencode/dist
+          tar -czf opencode-linux-x64.tar.gz opencode-linux-x64
+
+      - name: Upload to Release
+        if: inputs.version != ''
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ inputs.version }}
+          name: v${{ inputs.version }}
+          draft: false
+          files: |
+            packages/opencode/dist/opencode-linux-x64.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
