@@ -1,0 +1,15 @@
+# Sed injection config for Google tool
+# Format: PATTERN|ACTION|INJECTION
+# ACTION: 'a' = append after, 'i' = insert before
+
+# 1. Add import statement
+import { WebSearchTool } from "./websearch"|a|import { GoogleTool } from "./google"
+
+# 2. Add tool initialization
+websearch = yield|a|    const google = yield* GoogleTool
+
+# 3. Add to Effect.all
+search: Tool.init(websearch),|a|          google: Tool.init(google),
+
+# 4. Add to builtin array
+tool.search,|a|            tool.google,

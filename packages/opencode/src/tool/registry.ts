@@ -20,6 +20,7 @@ import { Plugin } from "../plugin"
 import { Provider } from "../provider"
 import { ProviderID, type ModelID } from "../provider/schema"
 import { WebSearchTool } from "./websearch"
+import { GoogleTool } from "./google"
 import { CodeSearchTool } from "./codesearch"
 import { Flag } from "@/flag/flag"
 import { Log } from "@/util"
@@ -105,6 +106,7 @@ export const layer: Layer.Layer<
     const plan = yield* PlanExitTool
     const webfetch = yield* WebFetchTool
     const websearch = yield* WebSearchTool
+    const google = yield* GoogleTool
     const bash = yield* BashTool
     const codesearch = yield* CodeSearchTool
     const globtool = yield* GlobTool
@@ -188,6 +190,7 @@ export const layer: Layer.Layer<
           fetch: Tool.init(webfetch),
           todo: Tool.init(todo),
           search: Tool.init(websearch),
+          google: Tool.init(google),
           code: Tool.init(codesearch),
           skill: Tool.init(skilltool),
           patch: Tool.init(patchtool),
@@ -211,6 +214,7 @@ export const layer: Layer.Layer<
             tool.fetch,
             tool.todo,
             tool.search,
+            tool.google,
             tool.code,
             tool.skill,
             tool.patch,
