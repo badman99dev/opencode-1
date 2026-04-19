@@ -1,0 +1,16 @@
+- Search Google using Serper API - performs real-time web searches with high-quality results
+- Provides up-to-date information for current events, recent data, and factual queries
+- Returns organic search results, knowledge graphs, and "People Also Ask" sections
+- Supports configurable result counts, country codes, and language codes
+- Use this tool for accessing information beyond your knowledge cutoff
+- Searches are performed automatically within a single API call
+
+Usage notes:
+  - Requires SERPER_API_KEY environment variable to be set
+  - Supports country code (gl) for region-specific results (e.g., 'us', 'in', 'uk')
+  - Supports language code (hl) for language-specific results (e.g., 'en', 'hi', 'es')
+  - Returns structured results including organic links, knowledge graphs, and related questions
+  - Default number of results is 10, configurable via numResults parameter
+
+The current year is {{year}}. You MUST use this year when searching for recent information or current events.
+- Example: If the current year is 2026 and the user asks for "latest AI news", search for "AI news 2026", NOT "AI news 2025"

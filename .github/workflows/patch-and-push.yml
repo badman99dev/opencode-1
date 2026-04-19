@@ -1,0 +1,140 @@
+name: Patch and Push
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_hash:
+        description: "Specific commit hash to checkout from official repo (optional)"
+        required: false
+        type: string
+      branch:
+        description: "Specific branch to checkout from official repo (optional)"
+        required: false
+        type: string
+      copy_official_workflows:
+        description: "Copy .github/workflows from official repo (default: yes)"
+        required: false
+        type: choice
+        options:
+          - "yes"
+          - "no"
+        default: "yes"
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout workflow repo
+        uses: actions/checkout@v4
+        with:
+          path: workflow-repo
+          fetch-depth: 0
+
+      - name: Clone official Opencode repo
+        run: |
+          git clone https://github.com/anomalyco/opencode.git opencode-patched
+
+      - name: Checkout specific commit or branch
+        run: |
+          cd opencode-patched
+          if [ -n "${{ inputs.commit_hash }}" ]; then
+            echo "Checking out commit: ${{ inputs.commit_hash }}"
+            git fetch origin ${{ inputs.commit_hash }}
+            git checkout ${{ inputs.commit_hash }}
+          elif [ -n "${{ inputs.branch }}" ]; then
+            echo "Checking out branch: ${{ inputs.branch }}"
+            git fetch origin ${{ inputs.branch }}:${{ inputs.branch }}
+            git checkout ${{ inputs.branch }}
+          else
+            echo "Using default branch and latest commit"
+          fi
+
+      - name: Copy self for next generation
+        run: |
+          mkdir -p opencode-patched/.github/workflows
+          cp workflow-repo/.github/workflows/patch-and-push.yml opencode-patched/.github/workflows/patch-and-push.yml
+
+      - name: Remove official workflows if disabled
+        if: inputs.copy_official_workflows == 'no'
+        run: |
+          cd opencode-patched/.github/workflows
+          find . -type f ! -name 'patch-and-push.yml' -delete
+
+      - name: Apply file replacements
+        run: |
+          PATCH_DIR="workflow-repo/.github/patch_res"
+          TARGET_DIR="opencode-patched"
+
+          find "$PATCH_DIR" -type f | while read -r src; do
+            rel_path="${src#$PATCH_DIR/}"
+            dest="$TARGET_DIR/$rel_path"
+            dest_dir="$(dirname "$dest")"
+
+            mkdir -p "$dest_dir"
+
+            if [ -f "$dest" ]; then
+              echo "Replacing: $rel_path"
+            else
+              echo "Adding: $rel_path"
+            fi
+
+            cp -f "$src" "$dest"
+          done
+
+      - name: Apply sed injections
+        run: |
+          TARGET_DIR="opencode-patched"
+          INJECTION_DIR="workflow-repo/.github/injections"
+
+          if [ -d "$INJECTION_DIR" ]; then
+            for injection_file in "$INJECTION_DIR"/*.txt; do
+              if [ -f "$injection_file" ]; then
+                echo "Processing injection: $(basename $injection_file)"
+                
+                while IFS='|' read -r pattern action injection; do
+                  # Skip empty lines and comments
+                  [[ -z "$pattern" || "$pattern" =~ ^# ]] && continue
+                  
+                  # Escape special characters in pattern for sed
+                  escaped_pattern=$(echo "$pattern" | sed 's/[\/&]/\\&/g')
+                  escaped_injection=$(echo "$injection" | sed 's/[\/&]/\\&/g')
+                  
+                  # Apply injection to all matching files
+                  find "$TARGET_DIR" -name "*.ts" -type f | while read -r file; do
+                    if grep -qF "$pattern" "$file" 2>/dev/null; then
+                      echo "  Injecting into: $file"
+                      if [ "$action" = "a" ]; then
+                        sed -i "/$escaped_pattern/a\\$escaped_injection" "$file"
+                      elif [ "$action" = "i" ]; then
+                        sed -i "/$escaped_pattern/i\\$escaped_injection" "$file"
+                      fi
+                    fi
+                  done
+                done < "$injection_file"
+              fi
+            done
+          else
+            echo "No injections directory found, skipping"
+          fi
+
+      - name: Copy patch_res for next generation
+        run: |
+          cp -r workflow-repo/.github/patch_res opencode-patched/.github/patch_res
+
+      - name: Copy injections for next generation
+        run: |
+          cp -r workflow-repo/.github/injections opencode-patched/.github/injections
+
+      - name: Commit and push
+        run: |
+          cd opencode-patched
+          git config user.name "badman99dev"
+          git config user.email "badman99dev@users.noreply.github.com"
+          git remote set-url origin "https://x-access-token:${{ secrets.GH_PAT }}@github.com/${{ github.repository }}.git"
+          git checkout -B ${{ github.ref_name }}
+          git add .
+          git commit -m "chore: apply patches and injections" || echo "No changes to commit"
+          git push origin ${{ github.ref_name }} --force
