@@ -46,7 +46,7 @@ export const GoogleTool = Tool.define(
               "X-API-KEY": apiKey,
               "Content-Type": "application/json",
             }),
-            HttpClientRequest.jsonBody(requestBody),
+            HttpClientRequest.setBody(JSON.stringify(requestBody)),
           )
 
           const response = yield* httpOk.execute(request)
