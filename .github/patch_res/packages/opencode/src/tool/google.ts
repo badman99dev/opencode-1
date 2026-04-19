@@ -41,7 +41,7 @@ export const GoogleTool = Tool.define(
             ...(params.hl && { hl: params.hl }),
           }
 
-          const request = yield* HttpClientRequest.post("https://google.serper.dev/search").pipe(
+          const request = HttpClientRequest.post("https://google.serper.dev/search").pipe(
             HttpClientRequest.setHeaders({
               "X-API-KEY": apiKey,
               "Content-Type": "application/json",
